@@ -1,5 +1,8 @@
 -- Create EcommerceOrders database
 CREATE DATABASE EcommerceOrders;
+GO;
+
+
 USE EcommerceOrders;
 
 -- Create Customers table
