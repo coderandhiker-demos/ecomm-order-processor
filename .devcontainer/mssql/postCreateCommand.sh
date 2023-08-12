@@ -30,4 +30,4 @@ do
     fi
 done
 
-export SQL_CONNECTION_STRING="Server=localhost,1433;Database=ECommerceOrders;User Id=sa;Password=$SApassword;"
+export DB_CONNECTION="Server=localhost,1433;Database=ECommerceOrders;User Id=sa;Password=$SApassword;"

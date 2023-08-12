@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Data;
+using System.Data.SqlClient;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 
@@ -10,15 +13,26 @@ namespace ServiceBusToDatabase
         {
             string queueName = "website-orders";
 
-            string? serviceBusConnectionString = Environment.GetEnvironmentVariable("SB_QUEUE_CONNECTION") ?? 
+            string serviceBusConnectionString = Environment.GetEnvironmentVariable("SB_QUEUE_CONNECTION") ??
                 throw new ArgumentNullException("Service Bus connection string must be supplied in environment variable SB_QUEUE_CONNECTION");
 
-            Console.WriteLine(serviceBusConnectionString);
+            string sqlConnectionString = Environment.GetEnvironmentVariable("DB_CONNECTION") ??
+                throw new ArgumentNullException("SQL Database connection string must be supplied in environment variable DB_CONNECTION");
 
-            await using var client = new ServiceBusClient(serviceBusConnectionString, new ServiceBusClientOptions{ TransportType = ServiceBusTransportType.AmqpTcp});
+            await using var client = new ServiceBusClient(serviceBusConnectionString);
             var processor = client.CreateProcessor(queueName);
 
-            processor.ProcessMessageAsync += ProcessMessageAsync;
+            processor.ProcessMessageAsync += async args =>
+            {
+                string messageBody = args.Message.Body.ToString();
+                Console.WriteLine($"Received message: {messageBody}");
+
+                // Insert the order into the database
+                await InsertOrderIntoDatabase(sqlConnectionString, messageBody);
+
+                await args.CompleteMessageAsync(args.Message);
+            };
+
             processor.ProcessErrorAsync += ProcessErrorAsync;
 
             await processor.StartProcessingAsync();
@@ -29,20 +43,52 @@ namespace ServiceBusToDatabase
             await processor.StopProcessingAsync();
         }
 
-        private static async Task ProcessMessageAsync(ProcessMessageEventArgs args)
-        {
-            string messageBody = args.Message.Body.ToString();
-            Console.WriteLine($"Received message: {messageBody}");
-
-            // Add your logic here to insert data into the database
-            // For now, we'll just complete the message
-            await args.CompleteMessageAsync(args.Message);
-        }
-
         private static Task ProcessErrorAsync(ProcessErrorEventArgs args)
         {
             Console.WriteLine($"Error: {args.Exception.Message}");
             return Task.CompletedTask;
+        }
+
+        private static async Task InsertOrderIntoDatabase(string sqlConnectionString, string orderJson)
+        {
+            using var connection = new SqlConnection(sqlConnectionString);
+            await connection.OpenAsync();
+
+            var orderData = JsonSerializer.Deserialize<OrderData>(orderJson);
+
+            using var transaction = connection.BeginTransaction();
+
+            try
+            {
+                using (var insertOrderCommand = new SqlCommand(
+                    "INSERT INTO Orders (CustomerID, OrderDate) VALUES (@CustomerID, @OrderDate)",
+                    connection,
+                    transaction))
+                {
+                    insertOrderCommand.Parameters.AddWithValue("@CustomerID", orderData?.CustomerId);
+                    insertOrderCommand.Parameters.AddWithValue("@OrderDate", DateTime.Now);
+                    await insertOrderCommand.ExecuteNonQueryAsync();
+                }
+                
+                foreach (var item in orderData.OrderItems)
+                {
+                    using var insertOrderItemCommand = new SqlCommand(
+                        "INSERT INTO OrderItems (ProductID, Quantity) VALUES (@ProductID, @Quantity)",
+                        connection,
+                        transaction);
+                    
+                    insertOrderItemCommand.Parameters.AddWithValue("@ProductID", item.ProductId);
+                    insertOrderItemCommand.Parameters.AddWithValue("@Quantity", item.Quantity);
+                    await insertOrderItemCommand.ExecuteNonQueryAsync();
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                throw ex;
+            }
         }
     }
 }

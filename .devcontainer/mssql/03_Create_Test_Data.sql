@@ -50,11 +50,13 @@ BEGIN
     DECLARE @ProductID INT = FLOOR(RAND() * 20) + 1; -- Random product ID
     DECLARE @Quantity INT = FLOOR(RAND() * 5) + 1;   -- Random quantity between 1 and 5
 
-    INSERT INTO Orders (OrderID, CustomerID, OrderDate)
-    VALUES (@Counter, @CustomerID, GETDATE());
+    DECLARE @OrderID UNIQUEIDENTIFIER = NEWID(); -- Generate a new GUID for each order
 
-    INSERT INTO OrderItems (OrderItemID, OrderID, ProductID, Quantity)
-    VALUES (@Counter, @Counter, @ProductID, @Quantity);
+    INSERT INTO Orders (OrderID, CustomerID, OrderDate)
+    VALUES (@OrderID, @CustomerID, GETDATE());
+
+    INSERT INTO OrderItems (OrderID, ProductID, Quantity)
+    VALUES (@OrderID, @ProductID, @Quantity);
 
     SET @Counter = @Counter + 1;
 END;

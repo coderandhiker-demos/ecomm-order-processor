@@ -15,9 +15,9 @@ CREATE TABLE Products (
     Price DECIMAL(10, 2)
 );
 
--- Create Orders table
+-- Create Orders table with GUID OrderID
 CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY,
+    OrderID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(), -- This generates a new GUID for each row
     CustomerID INT,
     OrderDate DATETIME,
     CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
@@ -26,7 +26,7 @@ CREATE TABLE Orders (
 -- Create OrderItems table
 CREATE TABLE OrderItems (
     OrderItemID INT PRIMARY KEY,
-    OrderID INT,
+    OrderID UNIQUEIDENTIFIER, -- This refers to the GUID OrderID in Orders table
     ProductID INT,
     Quantity INT,
     CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
