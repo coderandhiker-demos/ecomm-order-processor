@@ -23,10 +23,10 @@ CREATE TABLE Orders (
     CONSTRAINT FK_Orders_Customers FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
--- Create OrderItems table
+-- Create OrderItems table with auto-generated OrderItemID
 CREATE TABLE OrderItems (
-    OrderItemID INT PRIMARY KEY,
-    OrderID UNIQUEIDENTIFIER, -- This refers to the GUID OrderID in Orders table
+    OrderItemID INT IDENTITY(1,1) PRIMARY KEY, -- Configure as an identity column
+    OrderID UNIQUEIDENTIFIER,
     ProductID INT,
     Quantity INT,
     CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
