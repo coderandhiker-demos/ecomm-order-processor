@@ -28,7 +28,11 @@ namespace ServiceBusToDatabase
                 Console.WriteLine($"Received message: {messageBody}");
 
                 // Insert the order into the database
-                await InsertOrderIntoDatabase(sqlConnectionString, messageBody);
+                Guid? newOrderGuid = await InsertOrderIntoDatabase(sqlConnectionString, messageBody);
+                if (newOrderGuid.HasValue)
+                {
+                    Console.WriteLine($"New Order ID: {newOrderGuid}");
+                }
 
                 await args.CompleteMessageAsync(args.Message);
             };
@@ -38,7 +42,7 @@ namespace ServiceBusToDatabase
             await processor.StartProcessingAsync();
 
             Console.WriteLine("Listening for messages. Press any key to exit...");
-            Console.ReadKey();
+            Console.Read();
 
             await processor.StopProcessingAsync();
         }
@@ -49,7 +53,7 @@ namespace ServiceBusToDatabase
             return Task.CompletedTask;
         }
 
-        private static async Task InsertOrderIntoDatabase(string sqlConnectionString, string orderJson)
+        private static async Task<Guid?> InsertOrderIntoDatabase(string sqlConnectionString, string orderJson)
         {
             using var connection = new SqlConnection(sqlConnectionString);
             await connection.OpenAsync();
@@ -60,23 +64,31 @@ namespace ServiceBusToDatabase
 
             try
             {
+                Guid? newOrderGuid = null;
+
                 using (var insertOrderCommand = new SqlCommand(
-                    "INSERT INTO Orders (CustomerID, OrderDate) VALUES (@CustomerID, @OrderDate)",
+                    "INSERT INTO Orders (CustomerID, OrderDate) OUTPUT inserted.OrderID VALUES (@CustomerID, @OrderDate)",
                     connection,
                     transaction))
                 {
                     insertOrderCommand.Parameters.AddWithValue("@CustomerID", orderData?.CustomerId);
                     insertOrderCommand.Parameters.AddWithValue("@OrderDate", DateTime.Now);
-                    await insertOrderCommand.ExecuteNonQueryAsync();
+                    var result = await insertOrderCommand.ExecuteScalarAsync();
+
+                    if (result != null && result != DBNull.Value)
+                    {
+                        newOrderGuid = (Guid)result;
+                    }
                 }
                 
-                foreach (var item in orderData.OrderItems)
+                foreach (var item in orderData?.OrderItems ?? Enumerable.Empty<OrderItem>())
                 {
                     using var insertOrderItemCommand = new SqlCommand(
-                        "INSERT INTO OrderItems (ProductID, Quantity) VALUES (@ProductID, @Quantity)",
+                        "INSERT INTO OrderItems (OrderID, ProductID, Quantity) VALUES (@OrderID, @ProductID, @Quantity)",
                         connection,
                         transaction);
                     
+                    insertOrderItemCommand.Parameters.AddWithValue("@OrderID", newOrderGuid);
                     insertOrderItemCommand.Parameters.AddWithValue("@ProductID", item.ProductId);
                     insertOrderItemCommand.Parameters.AddWithValue("@Quantity", item.Quantity);
                     await insertOrderItemCommand.ExecuteNonQueryAsync();
@@ -84,6 +96,8 @@ namespace ServiceBusToDatabase
                 }
 
                 transaction.Commit();
+
+                return newOrderGuid;
             }
             catch (Exception ex)
             {

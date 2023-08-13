@@ -26,7 +26,7 @@ CREATE TABLE Orders (
 -- Create OrderItems table with auto-generated OrderItemID
 CREATE TABLE OrderItems (
     OrderItemID INT IDENTITY(1,1) PRIMARY KEY, -- Configure as an identity column
-    OrderID UNIQUEIDENTIFIER,
+    OrderID UNIQUEIDENTIFIER NOT NULL,
     ProductID INT,
     Quantity INT,
     CONSTRAINT FK_OrderItems_Orders FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),

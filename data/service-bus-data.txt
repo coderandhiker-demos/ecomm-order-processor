@@ -1,0 +1,57 @@
+-- Order with 1 item
+
+
+{
+  "CustomerId": 13,
+  "OrderItems": [
+    {
+      "ProductId": 8,
+      "Quantity": 1
+    }
+  ]
+}
+
+
+
+-- Order with 2 items
+
+
+{
+  "CustomerId": 13,
+  "OrderItems": [
+    {
+      "ProductId": 11,
+      "Quantity": 1
+    },
+    {
+      "ProductId": 15,
+      "Quantity": 1
+    }
+  ]
+}
+
+
+-- Order with 4 items
+
+
+{
+  "CustomerId": 13,
+  "OrderItems": [
+    {
+      "ProductId": 19,
+      "Quantity": 1
+    },
+    {
+      "ProductId": 6,
+      "Quantity": 1
+    },
+    {
+      "ProductId": 14,
+      "Quantity": 1
+    },
+    {
+      "ProductId": 10,
+      "Quantity": 1
+    }
+  ]
+}
