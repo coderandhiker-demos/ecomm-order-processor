@@ -14,7 +14,8 @@ VALUES
     (9, 'Liam', 'Martinez', 'liam.martinez@example.com'),
     (10, 'Emma', 'Hernandez', 'emma.hernandez@example.com'),
     (11, 'Ethan', 'Garcia', 'ethan.garcia@example.com'),
-    (12, 'Ava', 'Lopez', 'ava.lopez@example.com');
+    (12, 'Ava', 'Lopez', 'ava.lopez@example.com'),
+    (13, 'Chris', 'Roberts', 'chrisrtdevup2023@mailinator.com');
 
 -- Insert sample Guitar Models (Products)
 INSERT INTO Products (ProductID, ProductName, Price)
