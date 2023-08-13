@@ -80,6 +80,7 @@ namespace ServiceBusToDatabase
                     insertOrderItemCommand.Parameters.AddWithValue("@ProductID", item.ProductId);
                     insertOrderItemCommand.Parameters.AddWithValue("@Quantity", item.Quantity);
                     await insertOrderItemCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine($"{item.Quantity} of ProductID {item.ProductId} purchased");
                 }
 
                 transaction.Commit();
