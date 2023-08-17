@@ -29,5 +29,3 @@ do
         /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $SApassword -d master -i $f
     fi
 done
-
-export DB_CONNECTION="Server=localhost,1433;Database=ECommerceOrders;User Id=sa;Password=$SApassword;"
